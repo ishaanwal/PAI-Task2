@@ -22,10 +22,10 @@ def load_data() -> pd.DataFrame:
     return df
 
 
-def build_transactions(df: pd.DataFrame) -> List[Set[str]]:
+def building_transactions(df: pd.DataFrame) -> List[Set[str]]:
     """
-    Each transaction = items bought together in one shopping visit.
-    Approximated by grouping on (Member_number, Date).
+    Data is grouped by customer and date. Each group collects all items
+    bought in that basket. Only baskets with 2 or more items ar kept.
     """
     transactions: List[Set[str]] = []
     grouped = df.groupby(["Member_number", "Date"])["itemDescription"]
@@ -40,7 +40,8 @@ def build_transactions(df: pd.DataFrame) -> List[Set[str]]:
 
 def build_cooccurrence_graph(transactions: List[Set[str]]) -> Graph:
     """
-    Build an undirected weighted graph using adjacency dictionaries.
+    Here the graph is created. In each basket, pairs of items are found
+    This greated a weighted graph.
     """
     graph: Graph = {}
 
@@ -58,9 +59,11 @@ def _add_edge(graph: Graph, a: str, b: str, w: int) -> None:
     graph[a][b] = graph[a].get(b, 0) + w
 
 
-def top_copurchased(graph: Graph, item: str, k: int = 5) -> List[Tuple[str, int]]:
+def top_copurchaseditems(graph: Graph, item: str, k: int = 5) -> List[Tuple[str, int]]:
     """
-    Return top-k items most frequently co-purchased with `item`.
+    Items most commonly bought amongst other items are now found
+    Each item's neighbour in the graph is found, and their following count
+    Neighbours are sorted from high to low
     """
     item = item.lower().strip()
     if item not in graph:
@@ -73,7 +76,9 @@ def top_copurchased(graph: Graph, item: str, k: int = 5) -> List[Tuple[str, int]
 
 def top_bundles(transactions: List[Set[str]], k: int = 3) -> List[Tuple[Tuple[str, str], int]]:
     """
-    Top-k most common 2-item bundles across all transactions.
+    Here the most common item pairs are found.
+    It counts how many times each two item combos appear across all of the baskets
+    These two item combos ar then sorted from high to low
     """
     pair_counts: Dict[Tuple[str, str], int] = {}
     for basket in transactions:
@@ -85,9 +90,12 @@ def top_bundles(transactions: List[Set[str]], k: int = 3) -> List[Tuple[Tuple[st
     return pairs[:k]
 
 
-def are_copurchased(graph: Graph, item_a: str, item_b: str, min_count: int = 1) -> bool:
+def are_itemscopurchased(graph: Graph, item_a: str, item_b: str, min_count: int = 1) -> bool:
     """
-    Check whether two items have been co-purchased at least `min_count` times.
+    Here it checks whether or not two items were bought together.
+    Direct connections are found between the two items in the graph
+    It checks whether or not the connection count meets the minimum
+    True is only returned if the two items were bought together.
     """
     a = item_a.lower().strip()
     b = item_b.lower().strip()
@@ -96,7 +104,10 @@ def are_copurchased(graph: Graph, item_a: str, item_b: str, min_count: int = 1) 
 
 def bfs_related_items(graph: Graph, start_item: str, max_depth: int = 2) -> List[str]:
     """
-    BFS traversal to find items related to `start_item` within `max_depth`.
+    Here items related to the starting items are found, using the BFS search
+    It starts with the chosen item, then explores every connection from it.
+    The search then stops once it reaches the end
+    It then returns a list to us, of the related items found.
     """
     start = start_item.lower().strip()
     if start not in graph:
@@ -122,7 +133,7 @@ def bfs_related_items(graph: Graph, start_item: str, max_depth: int = 2) -> List
 
 def main():
     df = load_data()
-    transactions = build_transactions(df)
+    transactions = building_transactions(df)
     graph = build_cooccurrence_graph(transactions)
 
     print("Rows:", len(df))
@@ -132,14 +143,14 @@ def main():
     # Use a valid dataset item to demonstrate non-empty results
     item = "whole milk"
 
-    print(f"\nTop co-purchased with '{item}':", top_copurchased(graph, item, k=5))
+    print(f"\nTop co purchased with '{item}':", top_copurchaseditems(graph, item, k=5))
 
-    print("\nTop 3 bundles:", top_bundles(transactions, k=3))
+    print("\nThese are the top 3 bundles:", top_bundles(transactions, k=3))
 
-    print("\nCo-purchased check whole milk & soda:",
-          are_copurchased(graph, "whole milk", "soda"))
+    print("\nCo-purchased check on whole milk & soda:",
+          are_itemscopurchased(graph, "whole milk", "soda"))
 
-    print("\nBFS related items from whole milk (depth 2) sample:",
+    print("\nBFS related items, from whole milk (depth 2) sample:",
           bfs_related_items(graph, "whole milk", max_depth=2)[:10])
 
 

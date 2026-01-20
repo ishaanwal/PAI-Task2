@@ -1,11 +1,11 @@
 import pandas as pd
 
 from src.task2 import (
-    build_transactions,
+    building_transactions,
     build_cooccurrence_graph,
-    top_copurchased,
+    top_copurchaseditems,
     top_bundles,
-    are_copurchased,
+    are_itemscopurchased,
     bfs_related_items,
 )
 
@@ -15,7 +15,7 @@ def test_build_transactions_groups_member_date():
         "Date": ["2024-01-01", "2024-01-01", "2024-01-02", "2024-01-01"],
         "itemDescription": ["bread", "milk", "eggs", "bread"]
     })
-    tx = build_transactions(df)
+    tx = building_transactions(df)
     # transactions with >=2 items only => (1, 2024-01-01) has 2 items; others ignored
     assert len(tx) == 1
     assert tx[0] == {"bread", "milk"}
@@ -28,7 +28,7 @@ def test_graph_weights_increment():
 
 def test_top_copurchased_empty_for_unknown_item():
     g = {"bread": {"milk": 3}}
-    assert top_copurchased(g, "unknown", 5) == []
+    assert top_copurchaseditems(g, "unknown", 5) == []
 
 def test_top_bundles_counts_pairs():
     transactions = [{"bread", "milk"}, {"bread", "milk"}, {"bread", "eggs"}]
@@ -38,8 +38,8 @@ def test_top_bundles_counts_pairs():
 
 def test_are_copurchased_threshold():
     g = {"bread": {"milk": 2}, "milk": {"bread": 2}}
-    assert are_copurchased(g, "bread", "milk", min_count=2) is True
-    assert are_copurchased(g, "bread", "milk", min_count=3) is False
+    assert are_itemscopurchased(g, "bread", "milk", min_count=2) is True
+    assert are_itemscopurchased(g, "bread", "milk", min_count=3) is False
 
 def test_bfs_related_items_depth():
     g = {
